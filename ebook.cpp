@@ -1,12 +1,12 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include <map>
 
 class ReadingManager {
 public:
-    ReadingManager() : user_page_counts_(MAX_USER_COUNT_ + 1, 0), num_users_(0) {
+    ReadingManager() : user_page_counts_(MAX_USER_COUNT_ + 1, 0), page_to_num_users_(MAX_PAGE_COUNT_ + 1, 0), num_users_(0) {
         user_page_counts_.reserve(MAX_USER_COUNT_ + 1);
+        page_to_num_users_.reserve(MAX_PAGE_COUNT_ + 1);
     }
 
     void Read(const int user_id, int page_count) {
@@ -14,12 +14,7 @@ public:
         if (prev_page_count == 0) {
             ++num_users_;
         } else {
-            std::map<int, int>::iterator it = page_to_num_users_.find(prev_page_count);
-            if (it->second == 1) {
-                page_to_num_users_.erase(it);
-            } else {
-                --it->second;
-            }
+            --page_to_num_users_[prev_page_count];
         }
         user_page_counts_[user_id] = page_count;
         ++page_to_num_users_[page_count];
@@ -34,20 +29,17 @@ public:
             return 1.0;
         }
         int num_users_with_less_pages = 0;
-        for (const auto& pair : page_to_num_users_) {
-            if (pair.first < page_count) {
-                num_users_with_less_pages += pair.second;
-            } else if (pair.first == page_count) {
-                break;
-            }
+        for (int i = 1; i < page_count; ++i) {
+            num_users_with_less_pages += page_to_num_users_[i];
         }
         return static_cast<double>(num_users_with_less_pages) / (num_users_ - 1);
     }
 
 private:
     static const int MAX_USER_COUNT_ = 100'000;
+    static const int MAX_PAGE_COUNT_ = 1000;
     std::vector<int> user_page_counts_;
-    std::map<int, int> page_to_num_users_;
+    std::vector<int> page_to_num_users_;
     unsigned int num_users_;
 };
 
